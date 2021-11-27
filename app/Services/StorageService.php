@@ -115,7 +115,7 @@ class StorageService
 
     public function createFolder(string $name, ?Folder $parentFolder): Folder
     {
-        if ( ! $this->canWrite($parentFolder)) {
+        if ($parentFolder && ! $this->canWrite($parentFolder)) {
             throw new \Exception('Insufficient permissions');
         }
 
