@@ -339,7 +339,7 @@
             </div>
         </x-app-layout>
 
-        <div wire:loading.delay.long style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999999;">
+        <div wire:loading.delay.longer style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999999;">
             <div style="position: absolute; top: 50%; left: 50%; margin-left: -8px; margin-top: -8px;">
                 <div>
                     <div style="border-top-color:transparent"
