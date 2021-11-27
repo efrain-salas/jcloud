@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'default' => env('FILESYSTEM_DRIVER', 'local'),
+    'default' => 'backblaze',
 
     /*
     |--------------------------------------------------------------------------
@@ -29,6 +29,17 @@ return [
     */
 
     'disks' => [
+
+        'backblaze' => [
+            'driver' => 's3',
+            'key' => '002ccaf100991500000000001',
+            'secret' => 'K002tvITmJsNGs7BdTzHsyvWLk9UJVE',
+            'region' => 'us-west-002',
+            'bucket' => 'jcloud',
+            //'url' => '',
+            'endpoint' => 'https://s3.us-west-002.backblazeb2.com',
+            'use_path_style_endpoint' => false,
+        ],
 
         'local' => [
             'driver' => 'local',
