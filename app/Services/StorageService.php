@@ -288,7 +288,7 @@ class StorageService
             $options['ResponseContentDisposition'] = 'attachment; filename="' . $file->name . '"';
         }
 
-        return Storage::temporaryUrl($file->storage_name, $expiryDate);
+        return Storage::temporaryUrl($file->storage_name, $expiryDate, $options);
     }
 
     public function isImage(File $file): bool

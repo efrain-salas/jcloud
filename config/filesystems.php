@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'default' => 'backblaze',
+    'default' => 'wasabi',
 
     /*
     |--------------------------------------------------------------------------
@@ -29,6 +29,17 @@ return [
     */
 
     'disks' => [
+
+        'wasabi' => [
+            'driver' => 's3',
+            'key' => '4Z1YPDK6YLEX92SFWFFC',
+            'secret' => 'K43YQpkkGASfHqXN7C8KNAHSWn9edzIIqKlOMRRb',
+            'region' => 'eu-west-1',
+            'bucket' => 'jcloud',
+            //'url' => '',
+            'endpoint' => 'https://s3.eu-west-1.wasabisys.com',
+            'use_path_style_endpoint' => false,
+        ],
 
         'backblaze' => [
             'driver' => 's3',
