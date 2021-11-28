@@ -12,11 +12,10 @@
 
         <!-- Styles -->
         <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+        @livewireStyles
 
         <!-- Scripts -->
-        <script src="{{ asset('js/app.js') }}" defer></script>
-
-        @livewireStyles
+        <script src="{{ asset('js/resumable.js') }}"></script>
     </head>
     <body class="font-sans antialiased">
         <div class="min-h-screen bg-gray-100">
@@ -36,5 +35,6 @@
         </div>
 
         @livewireScripts
+        <script src="{{ asset('js/app.js') }}"></script>
     </body>
 </html>

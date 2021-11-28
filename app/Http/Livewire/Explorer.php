@@ -22,6 +22,7 @@ class Explorer extends Component
     public string $sortBy = 'name';
     public string $view = 'list';
     public bool $withTrashed = false;
+    public $uploadQueue = [];
 
     // New Folder Modal
     public bool $showNewFolderModal = false;
@@ -164,6 +165,16 @@ class Explorer extends Component
         }
 
         $this->emit('file-uploaded');
+    }
+
+    public function addToQueue(string $fileName)
+    {
+        $this->uploadQueue[] = $fileName;
+    }
+
+    public function removeFromQueue(string $fileName)
+    {
+        $this->uploadQueue = collect($this->uploadQueue)->reject($fileName)->all();
     }
 
     public function openNewFolderModal()

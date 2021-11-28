@@ -16,6 +16,7 @@
         "laravel/tinker": "^2.5",
         "league/flysystem-aws-s3-v3": "^1.0",
         "livewire/livewire": "^2.7",
+        "pion/laravel-chunk-upload": "^1.4",
         "ramsey/uuid": "^4.2",
         "spatie/laravel-enum": "^2.5"
     },

@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth'])->group(function () {
     Route::get('/', [\App\Http\Controllers\AppController::class, 'home'])->name('home');
     Route::get('explorer', [\App\Http\Controllers\AppController::class, 'explorer'])->name('explorer');
+    Route::post('upload', [\App\Http\Controllers\AppController::class, 'upload'])->name('upload');
 });
 
 require __DIR__.'/auth.php';

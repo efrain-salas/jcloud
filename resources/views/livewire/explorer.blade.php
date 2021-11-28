@@ -200,14 +200,42 @@
 
                                 <div class="ml-auto inline-flex gap-2 items-center">
                                     @if ($folder && ($folder->canWrite() || $folder->canUpload()))
-                                        <x-j-button>
+                                        <x-j-button id="bt-upload-files">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="inline h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                                             </svg>
                                             Subir archivos
-                                            <input wire:model="uploadedFiles" type="file" multiple class="absolute inset-0 opacity-0" />
+
                                         </x-j-button>
+                                        <script>
+                                            const resumable = new Resumable({
+                                                chunkSize: 10 * 1024 * 1024, // 10 MB
+                                                simultaneousUploads: 1,
+                                                testChunks: false,
+                                                throttleProgressCallbacks: 1,
+                                                target: '{{ route('upload') }}',
+                                                query: {
+                                                    _token : '{{ csrf_token() }}', // CSRF token
+                                                    folderId: '{{ $folderId }}',
+                                                },
+                                            });
+                                            resumable.assignBrowse(document.getElementById('bt-upload-files'));
+                                            resumable.on('fileAdded', function(file, event){
+                                                @this.addToQueue(file.fileName);
+                                                resumable.upload();
+                                                console.log(file);
+                                            });
+                                            resumable.on('fileSuccess', function(file, event){
+                                                @this.emitTo('explorer', 'file-uploaded');
+                                                @this.removeFromQueue(file.fileName);
+                                            });
+                                            resumable.on('fileError', function(file, event){
+                                                @this.removeFromQueue(file.fileName);
+                                            });
+                                        </script>
                                     @endif
+
+                                    <!-- <input wire:model="uploadedFiles" type="file" multiple class="absolute inset-0 opacity-0" /> -->
 
                                     @if (($folder && $folder->canWrite()) || ! $folder)
                                         <x-j-button wire:click="openNewFolderModal" wire:key="new-folder-button" onclick="console.log('hola?')">
@@ -225,6 +253,19 @@
                                     </span>
                                 </div>
                             </div>
+
+                            @foreach ($this->uploadQueue as $fileName)
+                                <div wire:key="{{ md5($fileName) }}" class="flex items-center gap-2 bg-yellow-50 border border-dotted border-yellow-400 rounded my-2 px-3 py-2">
+                                    <div class="flex flex-col justify-center mr-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                        </svg>
+                                    </div>
+                                    <div class="flex flex-col font-bold">
+                                        <div>{{ $fileName }}</div>
+                                    </div>
+                                </div>
+                            @endforeach
 
                             @foreach ($this->list() as $file)
                                 <div wire:key="{{ $file->key }}" class="flex items-center gap-2 {{ $this->isSelected($file->key) ? 'border border-blue-300 border-blue-300 bg-blue-100' : 'bg-gray-50 border border-gray-100 hover:border-blue-100 hover:bg-blue-50' }} {{ $file->trashed() ? 'border-red-200 bg-red-50' : '' }} rounded my-2 px-3 py-2">
@@ -271,25 +312,25 @@
 
                                             @if ($file->canWrite())
                                                 <span wire:click="openRenameModal('{{ $file->key }}')" class="mr-2 cursor-pointer" title="Renombrar">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                                </svg>
-                                            </span>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                                    </svg>
+                                                </span>
                                             @endif
 
                                             @if ($file->isFolder() && $file->isRootFolder() && $file->canEditPermissions())
                                                 <span wire:click="openPermissionsModal('{{ $file->key }}')" class="mr-2 cursor-pointer" title="Permisos">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                                </svg>
-                                            </span>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                                    </svg>
+                                                </span>
                                             @endif
                                             @if ($file->isFile())
                                                 <span onclick="shareFileUrl('{{ $this->getShareUrl($file->key) }}')" class="mr-2 cursor-pointer" title="Compartir">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                                                </svg>
-                                            </span>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                                    </svg>
+                                                </span>
                                             @endif
 
                                             @if ($file->canWrite())
@@ -366,7 +407,7 @@
             </div>
         </div>
 
-        <script>
+        <script wire:key="explorer-page-scripts">
             function shareFileUrl(url) {
                 copyText(url);
                 notify('Enlace copiado', 'Se ha copiado al portapaeles el enlace de descarga del archivo.');
