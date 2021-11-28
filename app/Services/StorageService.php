@@ -11,6 +11,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Ramsey\Uuid\Uuid;
+use Rolandstarke\Thumbnail\Facades\Thumbnail;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class StorageService
@@ -106,11 +107,6 @@ class StorageService
     public function restoreFile(File $file)
     {
         $file->restore();
-    }
-
-    public function createThumbnail(File $file)
-    {
-
     }
 
     public function createFolder(string $name, ?Folder $parentFolder): Folder
@@ -281,13 +277,28 @@ class StorageService
         }
     }
 
-    public function getDownloadUrl(File $file, Carbon $expiryDate = null): string
+    public function getDownloadUrl(File $file, ?Carbon $expiryDate = null, bool $inline = false): string
     {
         $expiryDate = $expiryDate ?: now()->addMinutes(5);
-        return Storage::temporaryUrl($file->storage_name, $expiryDate, [
+        $options = [
             'ResponseContentType' => $file->mime,
-            'ResponseContentDisposition' => 'attachment; filename="' . $file->name . '"',
-        ]);
+        ];
+
+        if (!$inline) {
+            $options['ResponseContentDisposition'] = 'attachment; filename="' . $file->name . '"';
+        }
+
+        return Storage::temporaryUrl($file->storage_name, $expiryDate);
+    }
+
+    public function isImage(File $file): bool
+    {
+        return str_contains($file->mime, 'image');
+    }
+
+    public function getThumbnailUrl(File $file, int $size = 64): string
+    {
+        return Thumbnail::src($this->getDownloadUrl($file))->smartcrop($size, $size)->url();
     }
 
     public function archive(Collection $files, \ZipArchive $existingZip = null, string $zipPath = null): ?BinaryFileResponse

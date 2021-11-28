@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Laravel\Scout\Searchable;
 
 class File extends Model
@@ -80,9 +81,19 @@ class File extends Model
         return 'file_' . $this->id;
     }
 
+    public function getExtensionAttribute(): string
+    {
+        return Str::of($this->name)->afterLast('.');
+    }
+
     public function getPathAttribute(): string
     {
         return (new StorageService())->getPath($this);
+    }
+
+    public function getUrlAttribute(): string
+    {
+        return (new StorageService())->getDownloadUrl($this, null, true);
     }
 
     public function getDownloadUrlAttribute(): string
@@ -102,6 +113,16 @@ class File extends Model
 
     public function isFile(): bool { return true; }
     public function isFolder(): bool { return false; }
+
+    public function isImage(): bool
+    {
+        return (new StorageService())->isImage($this);
+    }
+
+    public function getThumbnailUrl(int $size = 64): string
+    {
+        return (new StorageService())->getThumbnailUrl($this);
+    }
 
     public function getShareUrl(Carbon $expiryDate = null): string
     {

@@ -18,6 +18,7 @@
         "livewire/livewire": "^2.7",
         "pion/laravel-chunk-upload": "^1.4",
         "ramsey/uuid": "^4.2",
+        "rolandstarke/laravel-thumbnail": "^1.0",
         "spatie/laravel-enum": "^2.5"
     },
     "require-dev": {

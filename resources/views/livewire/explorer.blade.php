@@ -274,9 +274,15 @@
                                     </div>
                                     <div>
                                         @if ($file->isFile())
-                                            <!--<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                            </svg>-->
+                                            @if ($file->isImage())
+                                                <a href="{{ $file->url }}" target="_blank">
+                                                    <img src="{{ $file->getThumbnailUrl(40) }}" style="width: 40px;" />
+                                                </a>
+                                            @else
+                                                <div class="w-8 h-8 mx-1 border-2 border-yellow-400 text-yellow-400 rounded-lg">
+                                                    <div class="pt-1.5 text-xs font-extrabold text-center">{{ mb_strtoupper($file->extension) }}</div>
+                                                </div>
+                                            @endif
                                         @else
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 {{ $this->isSelected($file->key) ? 'text-blue-600' : 'text-yellow-400' }}" viewBox="0 0 20 20" fill="currentColor">
                                                 <path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1H8a3 3 0 00-3 3v1.5a1.5 1.5 0 01-3 0V6z" clip-rule="evenodd" />
@@ -287,7 +293,6 @@
                                     <div
                                         class="flex flex-col font-bold {{ $file->trashed() ? '' : 'cursor-pointer' }}"
                                         wire:click="open('{{ $file->key }}')"
-                                        onclick="return false;"
                                     >
                                         <div>{{ $file->name }}</div>
                                         <div class="-mt-1 text-sm text-gray-600">
