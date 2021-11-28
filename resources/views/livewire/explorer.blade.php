@@ -285,7 +285,7 @@
                                             </span>
                                             @endif
                                             @if ($file->isFile())
-                                                <span onclick="copyText('{{ $this->getShareUrl($file->key) }}')" class="mr-2 cursor-pointer" title="Compartir">
+                                                <span onclick="shareFileUrl('{{ $this->getShareUrl($file->key) }}')" class="mr-2 cursor-pointer" title="Compartir">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="inline-block h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                                                 </svg>
@@ -339,6 +339,24 @@
             </div>
         </x-app-layout>
 
+        <div id="notification" class="fixed bottom-5 right-5 mb-4" style="display: none;">
+            <div class="flex max-w-sm w-full bg-white shadow-md rounded-lg overflow-hidden mx-auto">
+                <div class="w-2 bg-green-600">
+                </div>
+                <div class="w-full flex justify-between items-start px-2 py-2">
+                    <div class="flex flex-col ml-2">
+                        <label id="notification-title" class="text-lg text-gray-800 font-bold">Enlace copiado</label>
+                        <p id="notification-text" class="mt-1 text-gray-500"></p>
+                    </div>
+                    <!--<a href="#">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </a>-->
+                </div>
+            </div>
+        </div>
+
         <div wire:loading.delay.longer style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999999;">
             <div style="position: absolute; top: 50%; left: 50%; margin-left: -8px; margin-top: -8px;">
                 <div>
@@ -349,9 +367,22 @@
         </div>
 
         <script>
+            function shareFileUrl(url) {
+                copyText(url);
+                notify('Enlace copiado', 'Se ha copiado al portapaeles el enlace de descarga del archivo.');
+            }
+
             function copyText(text) {
-                console.log(text);
-                return navigator.clipboard.writeText(text);
+                navigator.clipboard.writeText(text);
+            }
+
+            function notify(title, text) {
+                document.getElementById('notification-title').textContent = title;
+                document.getElementById('notification-text').textContent = text;
+                document.getElementById('notification').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('notification').style.display = 'none';
+                }, 7000);
             }
         </script>
     </div>
