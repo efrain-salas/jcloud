@@ -25,6 +25,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('model:prune')->daily();
+        $schedule->command('queue:work --once --timeout=1800 --tries=3')->everyMinute();
     }
 
     /**
