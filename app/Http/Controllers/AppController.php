@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\MoveToRemoteStorage;
 use App\Models\Folder;
 use App\Services\StorageService;
 use Illuminate\Http\Request;
@@ -31,12 +32,7 @@ class AppController extends Controller
         if ($save->isFinished()) {
             $uploadedFile = $save->getFile();
 
-            (new StorageService())->upload(Folder::find($request->folderId), $uploadedFile);
-
-            // Delete chunks
-            foreach (glob(storage_path('app/chunks/' . $uploadedFile->getClientOriginalName() . '*')) as $chunkFilePath) {
-                unlink($chunkFilePath);
-            }
+            MoveToRemoteStorage::dispatch($request->folderId, $uploadedFile);
         }
 
         $handler = $save->handler();
