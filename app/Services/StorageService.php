@@ -40,7 +40,7 @@ class StorageService
 
         $file->save();
 
-        MoveToRemoteStorage::dispatch($uploadedFile->getRealPath(), $storageName);
+        MoveToRemoteStorage::dispatch($file, $uploadedFile->getRealPath());
 
         return $file;
     }

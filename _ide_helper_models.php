@@ -19,6 +19,7 @@ namespace App\Models{
  * @property int $folder_id
  * @property string $name
  * @property string $storage_name
+ * @property int $is_uploaded
  * @property string $mime
  * @property int $size
  * @property \App\Enums\Permission|null $read
@@ -34,9 +35,11 @@ namespace App\Models{
  * @property-read \App\Models\User $fileUpdatedBy
  * @property-read \App\Models\Folder $folder
  * @property-read string $download_url
+ * @property-read string $extension
  * @property-read string $human_size
  * @property-read string $key
  * @property-read string $path
+ * @property-read string $url
  * @property-read \App\Models\User $owner
  * @method static \Illuminate\Database\Eloquent\Builder|File newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|File newQuery()
@@ -46,6 +49,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder|File whereDeletedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder|File whereFolderId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|File whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|File whereIsUploaded($value)
  * @method static \Illuminate\Database\Eloquent\Builder|File whereMime($value)
  * @method static \Illuminate\Database\Eloquent\Builder|File whereName($value)
  * @method static \Illuminate\Database\Eloquent\Builder|File whereRead($value)
