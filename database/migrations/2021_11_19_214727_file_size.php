@@ -14,7 +14,7 @@ class FileSize extends Migration
     public function up()
     {
         Schema::table('files', function (Blueprint $table) {
-            $table->unsignedInteger('size')->after('mime');
+            $table->unsignedBigInteger('size')->after('mime');
         });
     }
 
