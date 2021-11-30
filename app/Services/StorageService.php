@@ -178,11 +178,11 @@ class StorageService
 
     public function restoreFolder(Folder $folder)
     {
-        $folder->folders->each(function (Folder $folder) {
+        $folder->folders()->withTrashed()->get()->each(function (Folder $folder) {
             $this->restoreFolder($folder);
         });
 
-        $folder->files->each(function (File $file) {
+        $folder->files()->withTrashed()->get()->each(function (File $file) {
             $this->restoreFile($file);
         });
 
