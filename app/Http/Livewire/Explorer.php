@@ -215,6 +215,18 @@ class Explorer extends Component
         $this->showPermissionsModal = false;
     }
 
+    public function toggleUserPermission(string $permission, int $userId)
+    {
+        $users = collect($this->permissionsModalValues[$permission]);
+        if ($users->contains($userId)) {
+            $users = $users->reject($userId);
+        } else {
+            $users->push($userId);
+        }
+
+        $this->permissionsModalValues[$permission] = $users->all();
+    }
+
     public function updatePermissions()
     {
         $object = object($this->permissionsModalObjectKey);

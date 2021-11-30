@@ -77,8 +77,10 @@
                         @if ($permissionsModalValues['read'] == jcloud()->some()->value)
                             <div class="mt-2">
                                 @foreach (jcloud()->users() as $id => $name)
-                                    <input wire:model="permissionsModalValues.read_users" type="checkbox" value="{{ $id }}" id="read_user_{{ $id }}" />
-                                    <label for="read_user_{{ $id }}" class="mr-2">{{ $name }}</label>
+                                    <span>
+                                        <input wire:click="toggleUserPermission('read_users', {{ $id }})" type="checkbox" value="{{ $id }}" id="read_user_{{ $id }}" {{ in_array($id, $permissionsModalValues['read_users']) ? 'checked' : '' }} />
+                                        <label for="read_user_{{ $id }}" class="mr-2">{{ $name }}</label>
+                                    </span>
                                 @endforeach
                             </div>
                         @endif
@@ -93,8 +95,10 @@
                         @if ($permissionsModalValues['write'] == jcloud()->some()->value)
                             <div class="mt-2">
                                 @foreach (jcloud()->users() as $id => $name)
-                                    <input wire:model="permissionsModalValues.write_users" type="checkbox" value="{{ $id }}" id="write_user_{{ $id }}" />
-                                    <label for="write_user_{{ $id }}" class="mr-2">{{ $name }}</label>
+                                    <span>
+                                        <input wire:click="toggleUserPermission('write_users', {{ $id }})" type="checkbox" value="{{ $id }}" id="write_user_{{ $id }}" {{ in_array($id, $permissionsModalValues['write_users']) ? 'checked' : '' }} />
+                                        <label for="write_user_{{ $id }}" class="mr-2">{{ $name }}</label>
+                                    </span>
                                 @endforeach
                             </div>
                         @endif
@@ -110,8 +114,10 @@
                             @if ($permissionsModalValues['upload'] == jcloud()->some()->value)
                                 <div class="mt-2">
                                     @foreach (jcloud()->users() as $id => $name)
-                                        <input wire:model="permissionsModalValues.upload_users" type="checkbox" value="{{ $id }}" id="upload_user_{{ $id }}" />
+                                        <span>
+                                        <input wire:click="toggleUserPermission('upload_users', {{ $id }})" type="checkbox" value="{{ $id }}" id="upload_user_{{ $id }}" {{ in_array($id, $permissionsModalValues['upload_users']) ? 'checked' : '' }} />
                                         <label for="upload_user_{{ $id }}" class="mr-2">{{ $name }}</label>
+                                    </span>
                                     @endforeach
                                 </div>
                             @endif
