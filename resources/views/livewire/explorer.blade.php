@@ -277,7 +277,7 @@
                                         @if ($file->isFile())
                                             @if ($file->isImage() && $file->is_uploaded)
                                                 <a href="{{ $file->url }}" target="_blank">
-                                                    <img src="{{ $file->getThumbnailUrl(40) }}" style="width: 40px;" />
+                                                    <img src="{{ $file->getThumbnailUrl(40) }}" class="rounded-lg" style="width: 40px;" />
                                                 </a>
                                             @else
                                                 <div class="w-8 h-8 mx-1 border-2 border-yellow-400 text-yellow-400 rounded-lg">
