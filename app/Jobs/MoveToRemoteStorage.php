@@ -8,7 +8,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Http\UploadedFile;
+use Illuminate\Http\File;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
@@ -23,7 +23,8 @@ class MoveToRemoteStorage implements ShouldQueue
      */
     public function __construct(
         protected int $folderId,
-        protected UploadedFile $uploadedFile,
+        protected string $uploadedFilePath,
+        protected string $clientOriginalName,
     ) {}
 
     /**
@@ -34,10 +35,11 @@ class MoveToRemoteStorage implements ShouldQueue
     public function handle()
     {
         // Upload to default storage (remote)
-        (new StorageService())->upload(Folder::find($this->folderId), $this->uploadedFile);
+        $uploadedFile = new File($this->uploadedFilePath);
+        (new StorageService())->upload(Folder::find($this->folderId), $uploadedFile, $this->clientOriginalName);
 
         // Delete chunks
-        foreach (glob(storage_path('app/chunks/' . $this->uploadedFile->getClientOriginalName() . '*')) as $chunkFilePath) {
+        foreach (glob(storage_path('app/chunks/' . $this->clientOriginalName . '*')) as $chunkFilePath) {
             unlink($chunkFilePath);
         }
     }

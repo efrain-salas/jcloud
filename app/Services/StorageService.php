@@ -13,16 +13,24 @@ use Illuminate\Support\Facades\Storage;
 use Ramsey\Uuid\Uuid;
 use Rolandstarke\Thumbnail\Facades\Thumbnail;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Illuminate\Http\File as IlluminateHttpFile;
 
 class StorageService
 {
-    public function upload(Folder $folder, UploadedFile $uploadedFile, string $name = null): File
+    public function upload(Folder $folder, UploadedFile|IlluminateHttpFile $uploadedFile, string $name = null): File
     {
         if ( ! $this->canWrite($folder) && ! $this->canUpload($folder)) {
             throw new \Exception('Insufficient permissions');
         }
 
-        $name = $name ?: $uploadedFile->getClientOriginalName();
+        if ( ! $name) {
+            if ($uploadedFile instanceof UploadedFile) {
+                $name = $uploadedFile->getClientOriginalName();
+            } else {
+                throw new \Exception('Mandatory file name');
+            }
+        }
+
         $storageName = Storage::putFileAs('/', $uploadedFile, (string) Uuid::uuid4());
 
         $file = new File();

@@ -32,7 +32,7 @@ class AppController extends Controller
         if ($save->isFinished()) {
             $uploadedFile = $save->getFile();
 
-            MoveToRemoteStorage::dispatch($request->folderId, $uploadedFile);
+            MoveToRemoteStorage::dispatch($request->folderId, $uploadedFile->getRealPath(), $uploadedFile->getClientOriginalName());
         }
 
         $handler = $save->handler();
