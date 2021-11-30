@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\Permission;
+use App\Jobs\MoveToRemoteStorage;
 use App\Models\File;
 use App\Models\Folder;
 use App\Models\User;
@@ -13,25 +14,17 @@ use Illuminate\Support\Facades\Storage;
 use Ramsey\Uuid\Uuid;
 use Rolandstarke\Thumbnail\Facades\Thumbnail;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Illuminate\Http\File as IlluminateHttpFile;
 
 class StorageService
 {
-    public function upload(Folder $folder, UploadedFile|IlluminateHttpFile $uploadedFile, string $name = null): File
+    public function upload(Folder $folder, UploadedFile $uploadedFile, string $name = null): File
     {
         if ( ! $this->canWrite($folder) && ! $this->canUpload($folder)) {
             throw new \Exception('Insufficient permissions');
         }
 
-        if ( ! $name) {
-            if ($uploadedFile instanceof UploadedFile) {
-                $name = $uploadedFile->getClientOriginalName();
-            } else {
-                throw new \Exception('Mandatory file name');
-            }
-        }
-
-        $storageName = Storage::putFileAs('/', $uploadedFile, (string) Uuid::uuid4());
+        $name = $name ?: $uploadedFile->getClientOriginalName();
+        $storageName = (string) Uuid::uuid4();
 
         $file = new File();
         $file->owner()->associate(auth()->id());
@@ -46,6 +39,8 @@ class StorageService
         $file->size = $uploadedFile->getSize();
 
         $file->save();
+
+        MoveToRemoteStorage::dispatch($uploadedFile->getRealPath(), $storageName);
 
         return $file;
     }

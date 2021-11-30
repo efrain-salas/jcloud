@@ -2,8 +2,6 @@
 
 namespace App\Jobs;
 
-use App\Models\Folder;
-use App\Services\StorageService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -11,6 +9,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Http\File;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Storage;
 
 class MoveToRemoteStorage implements ShouldQueue
 {
@@ -22,9 +21,8 @@ class MoveToRemoteStorage implements ShouldQueue
      * @return void
      */
     public function __construct(
-        protected int $folderId,
         protected string $uploadedFilePath,
-        protected string $clientOriginalName,
+        protected string $remoteFileName,
     ) {}
 
     /**
@@ -36,10 +34,10 @@ class MoveToRemoteStorage implements ShouldQueue
     {
         // Upload to default storage (remote)
         $uploadedFile = new File($this->uploadedFilePath);
-        (new StorageService())->upload(Folder::find($this->folderId), $uploadedFile, $this->clientOriginalName);
+        Storage::putFileAs('/', $uploadedFile, $this->remoteFileName);
 
         // Delete chunks
-        foreach (glob(storage_path('app/chunks/' . $this->clientOriginalName . '*')) as $chunkFilePath) {
+        foreach (glob(storage_path('app/chunks/' . basename($this->uploadedFilePath) . '*')) as $chunkFilePath) {
             unlink($chunkFilePath);
         }
     }
