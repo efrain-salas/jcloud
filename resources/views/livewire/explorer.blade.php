@@ -231,6 +231,7 @@
                                             });
                                             resumable.on('fileError', function(file, event){
                                                 @this.removeFromQueue(file.fileName);
+                                                alert('Ocurrió un error subiendo el archivo ' + file.fileName);
                                             });
                                         </script>
                                     @endif
