@@ -274,7 +274,7 @@
                                     </div>
                                     <div>
                                         @if ($file->isFile())
-                                            @if ($file->isImage())
+                                            @if ($file->isImage() && $file->is_uploaded)
                                                 <a href="{{ $file->url }}" target="_blank">
                                                     <img src="{{ $file->getThumbnailUrl(40) }}" style="width: 40px;" />
                                                 </a>
