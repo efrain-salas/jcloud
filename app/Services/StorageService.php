@@ -7,6 +7,7 @@ use App\Jobs\MoveToRemoteStorage;
 use App\Models\File;
 use App\Models\Folder;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -27,10 +28,12 @@ class StorageService
         $storageName = (string) Uuid::uuid4();
 
         $file = new File();
-        $file->owner()->associate(auth()->id());
+        $file->user_id = $folder->user_id;
 
-        $file->read = Permission::OWNER();
-        $file->write = Permission::OWNER();
+        $file->read = $folder->read;
+        $file->read_users = $folder->read_users;
+        $file->write = $folder->write;
+        $file->write_users = $folder->write_users;
 
         $file->folder()->associate($folder);
         $file->name = $name;
@@ -119,11 +122,14 @@ class StorageService
         }
 
         $folder = new Folder();
-        $folder->owner()->associate(auth()->id());
+        $folder->user_id = $parentFolder ? $parentFolder->user_id : auth()->id();
 
-        $folder->read = Permission::OWNER();
-        $folder->write = Permission::OWNER();
-        $folder->upload = Permission::OWNER();
+        $folder->read = $parentFolder ? $parentFolder->read : Permission::OWNER();
+        $folder->read_users = $parentFolder ? $parentFolder->read_users : [];
+        $folder->write = $parentFolder ? $parentFolder->write : Permission::OWNER();
+        $folder->write_users = $parentFolder ? $parentFolder->write_users : [];
+        $folder->upload = $parentFolder ? $parentFolder->upload : Permission::OWNER();
+        $folder->upload_users = $parentFolder ? $parentFolder->upload_users : [];
 
         $folder->parent()->associate($parentFolder);
         $folder->name = $name;
@@ -138,17 +144,48 @@ class StorageService
         $sortBy = $sortBy == 'date' ? 'created_at' : $sortBy;
         $sortDirection = $sortBy == 'date' ? 'desc' : 'asc';
 
+        $userId = auth()->id();
+
         if ($folder) {
             $childFolders = $folder->folders()->withTrashed($withTrashed)->orderBy($sortBy, $sortDirection)->get();
             $childFiles = $folder->files()->withTrashed($withTrashed)->orderBy($sortBy, $sortDirection)->get();
-            $results = collect()->merge($childFolders)->merge($childFiles);
-        } else {
-            $results = Folder::whereFolderId(null)->withTrashed($withTrashed)->get();
-        }
+            $allChildren = collect()->merge($childFolders)->merge($childFiles);
 
-        return $results->filter(function (File|Folder $file) {
-            return $file->canRead();
-        });
+            return $allChildren->filter(function (File|Folder $file) {
+                return $file->canRead();
+            });
+        } else {
+            //$rootFolders = Folder::whereFolderId(null)->withTrashed($withTrashed)->get();
+            $allFolders = Folder::query()->withTrashed($withTrashed)
+                ->where(function (Builder $query) {
+                    $query
+                        ->where('read', Permission::ALL_USERS())
+                        ->orWhere('write', Permission::ALL_USERS())
+                        ->orWhere('upload', Permission::ALL_USERS());
+                })
+                ->orWhere(function (Builder $query) use ($userId) {
+                    $query
+                        ->where('read', Permission::SOME_USERS())
+                        ->whereJsonContains('read_users', $userId);
+                })
+                ->orWhere(function (Builder $query) use ($userId) {
+                    $query
+                        ->where('write', Permission::SOME_USERS())
+                        ->whereJsonContains('write_users', $userId);
+                })
+                ->orWhere(function (Builder $query) use ($userId) {
+                    $query
+                        ->where('upload', Permission::SOME_USERS())
+                        ->whereJsonContains('upload_users', $userId);
+                })->get();
+
+            // We filter out only those folders that do not have any folder higher up in the tree with access
+            // permissions for this user. That is to say, those that do not have their parent folder among
+            // the previous results.
+            return $allFolders->filter(function (Folder $folder) use ($allFolders) {
+                return $folder->folder_id == null || $allFolders->where('id', $folder->folder_id)->isEmpty();
+            });
+        }
     }
 
     public function moveFolder(Folder $folder, Folder $newParentFolder): Folder
@@ -215,6 +252,12 @@ class StorageService
 
         if ($file instanceof Folder) {
             $this->setUploadPermission($file, Permission::from($permissions['upload']), $permissions['upload_users']);
+        }
+
+        if ($file->isFolder()) {
+            $folder = $file;
+            $folder->files->each(fn ($childFile) => $this->setPermissions($childFile, $permissions));
+            $folder->folders->each(fn ($childFolder) => $this->setPermissions($childFolder, $permissions));
         }
 
         return $file;
@@ -357,19 +400,25 @@ class StorageService
 
     public function canRead(File|Folder $file, ?User $user = null): bool
     {
-        $file = $this->getRootFolder($file);
         $userId = $user ? $user->id : auth()->id();
 
-        return (
+        $canRead = (
             $file->owner->id == $userId
             || $file->read->value >= Permission::ALL_USERS()->value
             || ($file->read == Permission::SOME_USERS() && in_array($userId, $file->read_users))
         );
+
+        $canRead = $canRead ?: $this->canWrite($file, $user);
+
+        if (!$canRead && $file->isFolder()) {
+            return $this->canUpload($file, $user);
+        }
+
+        return $canRead;
     }
 
     public function canWrite(File|Folder $file, ?User $user = null): bool
     {
-        $file = $this->getRootFolder($file);
         $userId = $user ? $user->id : auth()->id();
 
         return (
@@ -381,7 +430,6 @@ class StorageService
 
     public function canUpload(Folder $folder, ?User $user = null): bool
     {
-        $folder = $this->getRootFolder($folder);
         $userId = $user ? $user->id : auth()->id();
 
         return (
