@@ -35,7 +35,7 @@ return [
             'key' => '4Z1YPDK6YLEX92SFWFFC',
             'secret' => 'K43YQpkkGASfHqXN7C8KNAHSWn9edzIIqKlOMRRb',
             'region' => 'eu-west-1',
-            'bucket' => 'jcloud',
+            'bucket' => env('APP_ENV') == 'production' ? 'jcloud' : 'jcloud-dev',
             //'url' => '',
             'endpoint' => 'https://s3.eu-west-1.wasabisys.com',
             'use_path_style_endpoint' => false,
