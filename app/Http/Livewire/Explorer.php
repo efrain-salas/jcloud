@@ -46,6 +46,10 @@ class Explorer extends Component
         'folder-created' => '$refresh',
         'folder-opened' => '$refresh',
         'trashed-toggled' => '$refresh',
+
+        'fileAdded' => 'addToQueue',
+        'fileSuccess' => 'removeFromQueue',
+        'fileError' => 'removeFromQueue',
     ];
 
     public function mount()

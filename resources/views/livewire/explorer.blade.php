@@ -211,10 +211,10 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                                             </svg>
                                             Subir archivos
-
+                                            <input type="file" multiple class="absolute inset-0 opacity-0" onchange="onUploadInputChange({{ $folderId }}, this)" />
                                         </x-j-button>
                                         <script>
-                                            const resumable = new Resumable({
+                                            /*const resumable = new Resumable({
                                                 chunkSize: 10 * 1024 * 1024, // 10 MB
                                                 simultaneousUploads: 1,
                                                 testChunks: false,
@@ -238,7 +238,7 @@
                                             resumable.on('fileError', function(file, event){
                                                 @this.removeFromQueue(file.fileName);
                                                 alert('Ocurrió un error subiendo el archivo ' + file.fileName);
-                                            });
+                                            });*/
                                         </script>
                                     @endif
 
@@ -419,10 +419,43 @@
             </div>
         </div>
 
-        <script wire:key="explorer-page-scripts">
+        <script>
+            function onUploadInputChange(folderId, input) {
+                const resumable = new Resumable({
+                    chunkSize: 10 * 1024 * 1024, // 10 MB
+                    simultaneousUploads: 1,
+                    testChunks: false,
+                    throttleProgressCallbacks: 1,
+                    target: '{{ route('upload') }}',
+                    query: {
+                        _token : '{{ csrf_token() }}', // CSRF token
+                        folderId,
+                    },
+                });
+
+                resumable.on('fileAdded', function(file, event){
+                    Livewire.emitTo('explorer', 'fileAdded', file.fileName);
+                    //@this.addToQueue(file.fileName);
+                    resumable.upload();
+                    console.log(file);
+                });
+                resumable.on('fileSuccess', function(file, event){
+                    //@this.emitTo('explorer', 'file-uploaded');
+                    //@this.removeFromQueue(file.fileName);
+                    Livewire.emitTo('explorer', 'fileSuccess', file.fileName);
+                });
+                resumable.on('fileError', function(file, event){
+                    Livewire.emitTo('explorer', 'fileError', file.fileName);
+                    //@this.removeFromQueue(file.fileName);
+                    alert('Ocurrió un error subiendo el archivo ' + file.fileName);
+                });
+
+                resumable.addFiles(input.files);
+            }
+
             function shareFileUrl(url) {
                 copyText(url);
-                notify('Enlace copiado', 'Se ha copiado al portapaeles el enlace de descarga del archivo.');
+                notify('Enlace copiado', 'Se ha copiado al portapapeles el enlace de descarga del archivo.');
             }
 
             function copyText(text) {
