@@ -31,10 +31,8 @@ class StorageService
         $file->user_id = $folder->user_id;
         $file->created_by = auth()->id();
 
-        $file->read = $folder->read;
-        $file->read_users = $folder->read_users;
-        $file->write = $folder->write;
-        $file->write_users = $folder->write_users;
+        $file->read = Permission::OWNER();
+        $file->write = Permission::OWNER();
 
         $file->folder()->associate($folder);
         $file->name = $name;
@@ -126,12 +124,9 @@ class StorageService
         $folder->user_id = $parentFolder ? $parentFolder->user_id : auth()->id();
         $folder->created_by = auth()->id();
 
-        $folder->read = $parentFolder ? $parentFolder->read : Permission::OWNER();
-        $folder->read_users = $parentFolder ? $parentFolder->read_users : [];
-        $folder->write = $parentFolder ? $parentFolder->write : Permission::OWNER();
-        $folder->write_users = $parentFolder ? $parentFolder->write_users : [];
-        $folder->upload = $parentFolder ? $parentFolder->upload : Permission::OWNER();
-        $folder->upload_users = $parentFolder ? $parentFolder->upload_users : [];
+        $folder->read = Permission::OWNER();
+        $folder->write = Permission::OWNER();
+        $folder->upload = Permission::OWNER();
 
         $folder->parent()->associate($parentFolder);
         $folder->name = $name;
