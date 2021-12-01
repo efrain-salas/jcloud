@@ -107,6 +107,11 @@ class Folder extends Model
         return ! $this->parent;
     }
 
+    public function isMine(): bool
+    {
+        return $this->user_id == auth()->id();
+    }
+
     public function list(string $sortBy = 'name'): Collection
     {
         return (new StorageService())->list($this, $sortBy);

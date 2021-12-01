@@ -119,6 +119,11 @@ class File extends Model
     public function isFile(): bool { return true; }
     public function isFolder(): bool { return false; }
 
+    public function isMine(): bool
+    {
+        return $this->user_id == auth()->id();
+    }
+
     public function isImage(): bool
     {
         return (new StorageService())->isImage($this);
