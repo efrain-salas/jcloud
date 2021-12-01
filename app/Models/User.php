@@ -45,4 +45,11 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    // Accessors & Mutators
+
+    public function getKeyAttribute(): string
+    {
+        return 'user_' . $this->id;
+    }
 }

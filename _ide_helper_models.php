@@ -29,6 +29,8 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property int|null $created_by
+ * @property-read \App\Models\User|null $creator
  * @property-read \App\Models\User $fileCreatedBy
  * @property-read \App\Models\User $fileDeletedBy
  * @property-read \App\Models\User $fileIncludedBy
@@ -46,6 +48,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Query\Builder|File onlyTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder|File query()
  * @method static \Illuminate\Database\Eloquent\Builder|File whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|File whereCreatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder|File whereDeletedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder|File whereFolderId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|File whereId($value)
@@ -83,6 +86,8 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property int|null $created_by
+ * @property-read \App\Models\User|null $creator
  * @property-read \Illuminate\Database\Eloquent\Collection|\App\Models\File[] $files
  * @property-read int|null $files_count
  * @property-read \App\Models\User $folderCreatedBy
@@ -100,6 +105,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Query\Builder|Folder onlyTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder|Folder query()
  * @method static \Illuminate\Database\Eloquent\Builder|Folder whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Folder whereCreatedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Folder whereDeletedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Folder whereFolderId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Folder whereId($value)
@@ -131,6 +137,7 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property-read string $key
  * @property-read \Illuminate\Notifications\DatabaseNotificationCollection|\Illuminate\Notifications\DatabaseNotification[] $notifications
  * @property-read int|null $notifications_count
  * @property-read \Illuminate\Database\Eloquent\Collection|\Laravel\Sanctum\PersonalAccessToken[] $tokens

@@ -7,10 +7,10 @@ use App\Jobs\MoveToRemoteStorage;
 use App\Models\File;
 use App\Models\Folder;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Ramsey\Uuid\Uuid;
 use Rolandstarke\Thumbnail\Facades\Thumbnail;
@@ -20,7 +20,7 @@ class StorageService
 {
     public function upload(Folder $folder, UploadedFile $uploadedFile, string $name = null): File
     {
-        if ( ! $this->canWrite($folder) && ! $this->canUpload($folder)) {
+        if (!$this->canUpload($folder)) {
             throw new \Exception('Insufficient permissions');
         }
 
@@ -84,7 +84,7 @@ class StorageService
 
     public function rename(File|Folder $file, string $newName): File|Folder
     {
-        if ( ! $this->canWrite($file)) {
+        if (!$this->canWrite($file)) {
             throw new \Exception('Insufficient permissions');
         }
 
@@ -104,7 +104,7 @@ class StorageService
 
     public function deleteFile(File $file)
     {
-        if ( ! $this->canWrite($file)) {
+        if (!$this->canWrite($file)) {
             throw new \Exception('Insufficient permissions');
         }
 
@@ -146,8 +146,6 @@ class StorageService
         $sortBy = $sortBy == 'date' ? 'created_at' : $sortBy;
         $sortDirection = $sortBy == 'date' ? 'desc' : 'asc';
 
-        $userId = auth()->id();
-
         if ($folder) {
             $childFolders = $folder->folders()->withTrashed($withTrashed)->orderBy($sortBy, $sortDirection)->get();
             $childFiles = $folder->files()->withTrashed($withTrashed)->orderBy($sortBy, $sortDirection)->get();
@@ -158,28 +156,6 @@ class StorageService
             });
         } else {
             $allFolders = Folder::query()->withTrashed($withTrashed)->get();
-
-                /*->where(function (Builder $query) {
-                    $query
-                        ->where('read', Permission::ALL_USERS())
-                        ->orWhere('write', Permission::ALL_USERS())
-                        ->orWhere('upload', Permission::ALL_USERS());
-                })
-                ->orWhere(function (Builder $query) use ($userId) {
-                    $query
-                        ->where('read', Permission::SOME_USERS())
-                        ->whereJsonContains('read_users', $userId);
-                })
-                ->orWhere(function (Builder $query) use ($userId) {
-                    $query
-                        ->where('write', Permission::SOME_USERS())
-                        ->whereJsonContains('write_users', $userId);
-                })
-                ->orWhere(function (Builder $query) use ($userId) {
-                    $query
-                        ->where('upload', Permission::SOME_USERS())
-                        ->whereJsonContains('upload_users', $userId);
-                })->get();*/
 
             $allWithPermissions = $allFolders->filter(function (Folder $folder) {
                 return $folder->canRead();
@@ -204,7 +180,7 @@ class StorageService
 
     public function deleteFolder(Folder $folder)
     {
-        if ( ! $this->canWrite($folder)) {
+        if (!$this->canWrite($folder)) {
             throw new \Exception('Insufficient permissions');
         }
 
@@ -260,18 +236,14 @@ class StorageService
             $this->setUploadPermission($file, Permission::from($permissions['upload']), $permissions['upload_users']);
         }
 
-        if ($file->isFolder()) {
-            $folder = $file;
-            $folder->files->each(fn ($childFile) => $this->setPermissions($childFile, $permissions));
-            $folder->folders->each(fn ($childFolder) => $this->setPermissions($childFolder, $permissions));
-        }
+        Cache::tags('permissions')->flush();
 
         return $file;
     }
 
     public function setReadPermission(File|Folder $file, Permission $permission, ?array $userIds)
     {
-        if ( ! $this->canEditPermissions($file)) {
+        if (!$this->canEditPermissions($file)) {
             throw new \Exception('Insufficient permissions');
         }
 
@@ -282,7 +254,7 @@ class StorageService
 
     public function setWritePermission(File|Folder $file, Permission $permission, ?array $userIds)
     {
-        if ( ! $this->canEditPermissions($file)) {
+        if (!$this->canEditPermissions($file)) {
             throw new \Exception('Insufficient permissions');
         }
 
@@ -293,7 +265,7 @@ class StorageService
 
     public function setUploadPermission(Folder $folder, Permission $permission, ?array $userIds)
     {
-        if ( ! $this->canEditPermissions($folder)) {
+        if (!$this->canEditPermissions($folder)) {
             throw new \Exception('Insufficient permissions');
         }
 
@@ -381,7 +353,7 @@ class StorageService
             }
         }
 
-        if ( ! $existingZip) {
+        if (!$existingZip) {
             $zip->close();
         }
 
@@ -401,47 +373,84 @@ class StorageService
     public function canEditPermissions(File|Folder $file, ?User $user = null): bool
     {
         $user = $user ?: auth()->user();
-        return $file->owner->is($user);
+        return $file->user_id == $user->id;
     }
 
     public function canRead(File|Folder $file, ?User $user = null): bool
     {
-        $userId = $user ? $user->id : auth()->id();
+        $user = $user ?: auth()->user();
 
-        $canRead = (
-            $file->owner->id == $userId
-            || $file->read->value >= Permission::ALL_USERS()->value
-            || ($file->read == Permission::SOME_USERS() && in_array($userId, $file->read_users))
-        );
+        return Cache::tags(['permissions', $file->key, $user->key])
+            ->rememberForever("canRead-$file->key-$user->key", function () use ($file, $user) {
+                $folder = $file->isFile() ? $file->folder : $file;
 
-        $canRead = $canRead ?: $this->canWrite($file, $user);
+                $canRead = (
+                    $folder->owner->id == $user->id
+                    || $folder->read->value >= Permission::ALL_USERS()->value
+                    || ($folder->read == Permission::SOME_USERS() && in_array($user->id, $folder->read_users))
+                );
 
-        if (!$canRead && $file->isFolder()) {
-            return $this->canUpload($file, $user);
-        }
+                $canRead = $canRead ?: $this->canWrite($folder, $user);
+                $canRead = $canRead ?: $this->canUpload($folder, $user);
 
-        return $canRead;
+                if (!$canRead) {
+                    $parentFolder = $folder;
+                    while (!$canRead && $parentFolder = $parentFolder->parent) {
+                        $canRead = $this->canRead($parentFolder, $user);
+                    }
+                }
+
+                return $canRead;
+            });
     }
 
     public function canWrite(File|Folder $file, ?User $user = null): bool
     {
-        $userId = $user ? $user->id : auth()->id();
+        $user = $user ?: auth()->user();
 
-        return (
-            $file->owner->id == $userId
-            || $file->write->value >= Permission::ALL_USERS()->value
-            || ($file->write == Permission::SOME_USERS() && in_array($userId, $file->write_users))
-        );
+        return Cache::tags(['permissions', $file->key, $user->key])
+            ->rememberForever("canWrite-$file->key-$user->key", function () use ($file, $user) {
+                $folder = $file->isFile() ? $file->folder : $file;
+
+                $canWrite = (
+                    $folder->owner->id == $user->id
+                    || $folder->write->value >= Permission::ALL_USERS()->value
+                    || ($folder->write == Permission::SOME_USERS() && in_array($user->id, $folder->write_users))
+                );
+
+                if (!$canWrite) {
+                    $parentFolder = $folder;
+                    while (!$canWrite && $parentFolder = $parentFolder->parent) {
+                        $canWrite = $this->canWrite($parentFolder, $user);
+                    }
+                }
+
+                return $canWrite;
+            });
     }
 
     public function canUpload(Folder $folder, ?User $user = null): bool
     {
-        $userId = $user ? $user->id : auth()->id();
+        $user = $user ?: auth()->user();
 
-        return (
-            $folder->owner->id == $userId
-            || $folder->upload->value >= Permission::ALL_USERS()->value
-            || ($folder->upload == Permission::SOME_USERS() && in_array($userId, $folder->upload_users))
-        );
+        return Cache::tags(['permissions', $folder->key, $user->key])
+            ->rememberForever("canUpload-$folder->key-$user->key", function () use ($folder, $user) {
+                $canUpload = (
+                    $folder->owner->id == $user->id
+                    || $folder->upload->value >= Permission::ALL_USERS()->value
+                    || ($folder->upload == Permission::SOME_USERS() && in_array($user->id, $folder->upload_users))
+                );
+
+                $canUpload = $canUpload ?: $this->canWrite($folder, $user);
+
+                if (!$canUpload) {
+                    $parentFolder = $folder;
+                    while (!$canUpload && $parentFolder = $parentFolder->parent) {
+                        $canUpload = $this->canUpload($parentFolder, $user);
+                    }
+                }
+
+                return $canUpload;
+            });
     }
 }

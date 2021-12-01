@@ -125,7 +125,9 @@ class Folder extends Model
         $folder = $this;
 
         while ($folder = $folder->parent) {
-            $crumbs[$folder->key] = $folder->name;
+            if ($folder->canRead()) {
+                $crumbs[$folder->key] = $folder->name;
+            }
         }
 
         return array_reverse($crumbs);
