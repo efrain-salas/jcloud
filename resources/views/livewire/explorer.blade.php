@@ -301,7 +301,7 @@
                                         class="flex flex-col font-bold {{ $file->trashed() ? '' : 'cursor-pointer' }}"
                                         wire:click="open('{{ $file->key }}')"
                                     >
-                                        <div>{{ $file->name }}</div>
+                                        <div>{{ $file->name }} <small class="text-gray-400">{{ $file->isFolder() && $file->isRootFolder() ? 'de ' . $file->owner->name : '' }}</small></div>
                                         <div class="-mt-1 text-sm text-gray-600">
                                             {{ $file->human_size ? $file->human_size . ' - ' : '' }}{{ $file->created_at->format('d/m/y H:i') }} - {{ $file->creator->name }}
                                         </div>
