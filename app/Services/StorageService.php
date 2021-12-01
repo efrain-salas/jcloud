@@ -301,8 +301,7 @@ class StorageService
 
     public function getThumbnailUrl(File $file, int $size = 64): string
     {
-        return $this->getDownloadUrl($file, null, true);
-        //return Thumbnail::src($this->getDownloadUrl($file))->smartcrop($size, $size)->url();
+        return Thumbnail::src($this->getDownloadUrl($file))->smartcrop($size, $size)->url();
     }
 
     public function archive(Collection $files, \ZipArchive $existingZip = null, string $zipPath = null): ?BinaryFileResponse
