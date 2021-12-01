@@ -303,7 +303,7 @@
                                     >
                                         <div>{{ $file->name }}</div>
                                         <div class="-mt-1 text-sm text-gray-600">
-                                            {{ $file->human_size ? $file->human_size . ' - ' : '' }}{{ $file->created_at->format('d/m/y H:i') }} - {{ $file->owner->name }}
+                                            {{ $file->human_size ? $file->human_size . ' - ' : '' }}{{ $file->created_at->format('d/m/y H:i') }} - {{ $file->creator->name }}
                                         </div>
                                     </div>
                                     <div class="ml-auto">

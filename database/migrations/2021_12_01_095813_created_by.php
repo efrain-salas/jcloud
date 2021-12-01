@@ -14,11 +14,11 @@ class CreatedBy extends Migration
     public function up()
     {
         Schema::table('files', function (Blueprint $table) {
-            $table->foreignId('created_by')->nullable()->constrained('users');
+            $table->foreignId('created_by')->constrained('users');
         });
 
         Schema::table('folders', function (Blueprint $table) {
-            $table->foreignId('created_by')->nullable()->constrained('users');
+            $table->foreignId('created_by')->constrained('users');
         });
     }
 

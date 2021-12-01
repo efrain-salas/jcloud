@@ -29,6 +29,7 @@ class StorageService
 
         $file = new File();
         $file->user_id = $folder->user_id;
+        $file->created_by = auth()->id();
 
         $file->read = $folder->read;
         $file->read_users = $folder->read_users;
@@ -123,6 +124,7 @@ class StorageService
 
         $folder = new Folder();
         $folder->user_id = $parentFolder ? $parentFolder->user_id : auth()->id();
+        $folder->created_by = auth()->id();
 
         $folder->read = $parentFolder ? $parentFolder->read : Permission::OWNER();
         $folder->read_users = $parentFolder ? $parentFolder->read_users : [];
@@ -155,9 +157,9 @@ class StorageService
                 return $file->canRead();
             });
         } else {
-            //$rootFolders = Folder::whereFolderId(null)->withTrashed($withTrashed)->get();
-            $allFolders = Folder::query()->withTrashed($withTrashed)
-                ->where(function (Builder $query) {
+            $allFolders = Folder::query()->withTrashed($withTrashed)->get();
+
+                /*->where(function (Builder $query) {
                     $query
                         ->where('read', Permission::ALL_USERS())
                         ->orWhere('write', Permission::ALL_USERS())
@@ -177,13 +179,17 @@ class StorageService
                     $query
                         ->where('upload', Permission::SOME_USERS())
                         ->whereJsonContains('upload_users', $userId);
-                })->get();
+                })->get();*/
+
+            $allWithPermissions = $allFolders->filter(function (Folder $folder) {
+                return $folder->canRead();
+            });
 
             // We filter out only those folders that do not have any folder higher up in the tree with access
             // permissions for this user. That is to say, those that do not have their parent folder among
             // the previous results.
-            return $allFolders->filter(function (Folder $folder) use ($allFolders) {
-                return $folder->folder_id == null || $allFolders->where('id', $folder->folder_id)->isEmpty();
+            return $allWithPermissions->filter(function (Folder $folder) use ($allWithPermissions) {
+                return $folder->folder_id == null || $allWithPermissions->where('id', $folder->folder_id)->isEmpty();
             });
         }
     }
