@@ -36,6 +36,8 @@ class AppController extends Controller
 
         $handler = $save->handler();
         return response()->json([
+            'fileName' => $save->getClientOriginalName(),
+            'fileKey' => 'file-' . md5($save->getClientOriginalName()),
             'done' => $handler->getPercentageDone(),
         ]);
     }

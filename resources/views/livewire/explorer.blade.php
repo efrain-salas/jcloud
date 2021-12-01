@@ -1,11 +1,5 @@
 <div>
-    <div
-        x-data="{ isUploading: false, progress: 0 }"
-        x-on:livewire-upload-start="isUploading = true"
-        x-on:livewire-upload-finish="isUploading = false; @this.uploadFiles()"
-        x-on:livewire-upload-error="isUploading = false"
-        x-on:livewire-upload-progress="progress = $event.detail.progress"
-    >
+    <div>
         <x-app-layout>
             <x-slot name="header">
                 <!--<h2 class="font-semibold text-xl text-gray-800 leading-tight">
@@ -213,36 +207,7 @@
                                             Subir archivos
                                             <input type="file" multiple class="absolute inset-0 opacity-0" onchange="onUploadInputChange({{ $folderId }}, this)" />
                                         </x-j-button>
-                                        <script>
-                                            /*const resumable = new Resumable({
-                                                chunkSize: 10 * 1024 * 1024, // 10 MB
-                                                simultaneousUploads: 1,
-                                                testChunks: false,
-                                                throttleProgressCallbacks: 1,
-                                                target: '{{ route('upload') }}',
-                                                query: {
-                                                    _token : '{{ csrf_token() }}', // CSRF token
-                                                    folderId: '{{ $folderId }}',
-                                                },
-                                            });
-                                            resumable.assignBrowse(document.getElementById('bt-upload-files-{{ $folderId }}'));
-                                            resumable.on('fileAdded', function(file, event){
-                                                @this.addToQueue(file.fileName);
-                                                resumable.upload();
-                                                console.log(file);
-                                            });
-                                            resumable.on('fileSuccess', function(file, event){
-                                                @this.emitTo('explorer', 'file-uploaded');
-                                                @this.removeFromQueue(file.fileName);
-                                            });
-                                            resumable.on('fileError', function(file, event){
-                                                @this.removeFromQueue(file.fileName);
-                                                alert('Ocurrió un error subiendo el archivo ' + file.fileName);
-                                            });*/
-                                        </script>
                                     @endif
-
-                                    <!-- <input wire:model="uploadedFiles" type="file" multiple class="absolute inset-0 opacity-0" /> -->
 
                                     @if (($folder && $folder->canWrite()) || ! $folder)
                                         <x-j-button wire:click="openNewFolderModal" wire:key="new-folder-button">
@@ -262,13 +227,14 @@
                             </div>
 
                             @foreach ($this->uploadQueue as $fileName)
-                                <div wire:key="{{ md5($fileName) }}" class="flex items-center gap-2 bg-yellow-50 border border-dotted border-yellow-400 rounded my-2 px-3 py-2">
-                                    <div class="flex flex-col justify-center mr-1">
+                                <div wire:key="{{ md5($fileName) }}" id="file-{{ md5($fileName) }}" class="relative flex items-center gap-2 bg-yellow-50 border border-dotted border-yellow-400 rounded my-2 px-3 py-2">
+                                    <div class="bar absolute top-0 left-0" style="background-color: rgb(252, 211, 77); height: 100%;"></div>
+                                    <div class="flex flex-col justify-center mr-1 z-10">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                         </svg>
                                     </div>
-                                    <div class="flex flex-col font-bold">
+                                    <div class="flex flex-col font-bold z-10">
                                         <div>{{ $fileName }}</div>
                                     </div>
                                 </div>
@@ -433,20 +399,32 @@
                     },
                 });
 
-                resumable.on('fileAdded', function(file, event){
+                resumable.on('fileAdded', (file, event) => {
                     Livewire.emitTo('explorer', 'fileAdded', file.fileName);
-                    //@this.addToQueue(file.fileName);
                     resumable.upload();
-                    console.log(file);
                 });
-                resumable.on('fileSuccess', function(file, event){
-                    //@this.emitTo('explorer', 'file-uploaded');
-                    //@this.removeFromQueue(file.fileName);
+                resumable.on('fileProgress', (file, message) => {
+                    const data = message ? JSON.parse(message) : {};
+                    if (data?.done) {
+                        const percentage = data.done;
+                        const e = new CustomEvent('fileProgress', {
+                            detail: {
+                                fileName: file.fileName,
+                                progress: percentage,
+                            }
+                        });
+
+                        const bar = document.querySelector('#' + data.fileKey + ' .bar');
+                        if (bar) {
+                            bar.style.width = percentage + '%';
+                        }
+                    }
+                });
+                resumable.on('fileSuccess', (file, event) => {
                     Livewire.emitTo('explorer', 'fileSuccess', file.fileName);
                 });
-                resumable.on('fileError', function(file, event){
+                resumable.on('fileError', (file, event) => {
                     Livewire.emitTo('explorer', 'fileError', file.fileName);
-                    //@this.removeFromQueue(file.fileName);
                     alert('Ocurrió un error subiendo el archivo ' + file.fileName);
                 });
 
